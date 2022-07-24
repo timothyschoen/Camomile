@@ -193,41 +193,84 @@ void CamomileAudioProcessor::sendParameters()
 
 void CamomileAudioProcessor::sendPlayhead()
 {
-    int const phl = CamomileEnvironment::getPlayHeadLevel();
-    if(phl > 0)
+    AudioPlayHead* playhead = getPlayHead();
+    if(!playhead) return;
+    
+    auto infos = playhead->getPosition();
+    
+    if (infos.hasValue())
     {
-        AudioPlayHead* playhead = getPlayHead();
-        AudioPlayHead::CurrentPositionInfo infos;
-        if(playhead && playhead->getCurrentPosition(infos))
-        {
-            m_atoms_playhead[0] = static_cast<float>(infos.isPlaying);
-            sendMessage("playhead", "playing", m_atoms_playhead);
-            m_atoms_playhead[0] = static_cast<float>(infos.isRecording);
-            sendMessage("playhead", "recording", m_atoms_playhead);
-            m_atoms_playhead[0] = static_cast<float>(infos.isLooping);
-            m_atoms_playhead.push_back(static_cast<float>(infos.ppqLoopStart));
-            m_atoms_playhead.push_back(static_cast<float>(infos.ppqLoopEnd));
-            sendMessage("playhead", "looping", m_atoms_playhead);
-            m_atoms_playhead.resize(1);
-            m_atoms_playhead[0] = static_cast<float>(infos.editOriginTime);
-            sendMessage("playhead", "edittime", m_atoms_playhead);
-            m_atoms_playhead[0] = static_cast<float>(infos.frameRate);
-            sendMessage("playhead", "framerate", m_atoms_playhead);
-            
-            m_atoms_playhead[0] = static_cast<float>(infos.bpm);
-            sendMessage("playhead", "bpm", m_atoms_playhead);
-            m_atoms_playhead[0] = static_cast<float>(infos.ppqPositionOfLastBarStart);
-            sendMessage("playhead", "lastbar", m_atoms_playhead);
-            m_atoms_playhead[0] = static_cast<float>(infos.timeSigNumerator);
-            m_atoms_playhead.push_back(static_cast<float>(infos.timeSigDenominator));
-            sendMessage("playhead", "timesig", m_atoms_playhead);
-            
-            m_atoms_playhead[0] = static_cast<float>(infos.ppqPosition);
-            m_atoms_playhead[1] = static_cast<float>(infos.timeInSamples);
-            m_atoms_playhead.push_back(static_cast<float>(infos.timeInSeconds));
-            sendMessage("playhead", "position", m_atoms_playhead);
-            m_atoms_playhead.resize(1);
+        m_atoms_playhead[0] = static_cast<float>(infos->getIsPlaying());
+        sendMessage("playhead", "playing", atoms_playhead);
+        
+        m_atoms_playhead[0] = static_cast<float>(infos->getIsRecording());
+        sendMessage("playhead", "recording", atoms_playhead);
+
+        m_atoms_playhead[0] = static_cast<float>(infos->getIsLooping());
+        
+        auto loopPoints = infos->getLoopPoints();
+        if(loopPoints.hasValue()) {
+            m_atoms_playhead.push_back(static_cast<float>(loopPoints->ppqStart));
+            m_atoms_playhead.push_back(static_cast<float>(loopPoints->ppqEnd));
         }
+        else {
+            m_atoms_playhead.push_back(0.0f);
+            m_atoms_playhead.push_back(0.0f);
+        }
+        sendMessage("playhead", "looping", m_atoms_playhead);
+        
+        if(infos->getEditOriginTime().hasValue()) {
+            m_atoms_playhead.resize(1);
+            m_atoms_playhead[0] = static_cast<float>(*infos->getEditOriginTime());
+            sendMessage("playhead", "edittime", m_atoms_playhead);
+        }
+
+        if(infos->getFrameRate().hasValue()) {
+            m_atoms_playhead[0] = static_cast<float>(infos->getFrameRate()->getEffectiveRate());
+            sendMessage("playhead", "framerate", m_atoms_playhead);
+        }
+
+       
+        if(infos->getBpm().hasValue()) {
+            m_atoms_playhead[0] = static_cast<float>(*infos->getBpm());
+            sendMessage("playhead", "bpm", m_atoms_playhead);
+        }
+        
+        if(infos->getPpqPositionOfLastBarStart().hasValue()) {
+            m_atoms_playhead[0] = static_cast<float>(*infos->getPpqPositionOfLastBarStart());
+            sendMessage("playhead", "lastbar", m_atoms_playhead);
+        }
+        
+        if(infos->getTimeSignature().hasValue()) {
+            m_atoms_playhead[0] = static_cast<float>(infos->getTimeSignature()->numerator);
+            m_atoms_playhead.push_back(static_cast<float>(infos->getTimeSignature()->denominator));
+            sendMessage("playhead", "timesig", m_atoms_playhead);
+        }
+
+        if(infos->getPpqPosition().hasValue()) {
+            
+            m_atoms_playhead[0] = static_cast<float>(*infos->getPpqPosition());
+        }
+        else {
+            m_atoms_playhead[0] = 0.0f;
+        }
+        
+        if(infos->getTimeInSamples().hasValue()) {
+            m_atoms_playhead[1] = static_cast<float>(*infos->getTimeInSamples());
+        }
+        else {
+            m_atoms_playhead[1] = 0.0f;
+        }
+        
+        if(infos->getTimeInSeconds().hasValue()) {
+            m_atoms_playhead.push_back(static_cast<float>(*infos->getTimeInSeconds()));
+        }
+        else {
+            m_atoms_playhead.push_back(0.0f);
+        }
+        
+        sendMessage("playhead", "position", m_atoms_playhead);
+        m_atoms_playhead.resize(1);
     }
 }
 
