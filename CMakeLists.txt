@@ -183,7 +183,7 @@ juce_add_plugin(Camomile
     COPY_PLUGIN_AFTER_BUILD     TRUE
     PLUGIN_MANUFACTURER_CODE    PIGU
     PLUGIN_CODE                 Kpq8
-    FORMATS                     AU VST3 LV2
+    FORMATS                     AU VST3
     PRODUCT_NAME                "Camomile"
     AU_MAIN_TYPE                kAudioUnitType_MusicDevice
     VST3_CATEGORIES             Instrument
@@ -207,7 +207,7 @@ juce_add_plugin(CamomileFx
     COPY_PLUGIN_AFTER_BUILD     TRUE
     PLUGIN_MANUFACTURER_CODE    PIGU
     PLUGIN_CODE                 Kpq9
-    FORMATS                     AU VST3 LV2
+    FORMATS                     AU VST3
     PRODUCT_NAME                "CamomileFx"
     AU_MAIN_TYPE                kAudioUnitType_MusicEffect
     VST3_CATEGORIES             Fx
@@ -255,6 +255,7 @@ endif()
 
 target_compile_definitions(Camomile PUBLIC ${CAMOMILE_COMPILE_DEFINITIONS})
 target_compile_definitions(CamomileFx PUBLIC ${CAMOMILE_COMPILE_DEFINITIONS})
+target_compile_definitions(Camomile_LV2 PRIVATE "JucePlugin_Build_LV2=1")
 
 list(APPEND LIBPD_INCLUDE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/libpd/pure-data/src")
 target_include_directories(Camomile PUBLIC "$<BUILD_INTERFACE:${LIBPD_INCLUDE_DIRECTORY}>")
@@ -262,6 +263,7 @@ target_include_directories(CamomileFx PUBLIC "$<BUILD_INTERFACE:${LIBPD_INCLUDE_
 
 file(GLOB CamomileBinaryDataSources
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/Credits/CreditsAU
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/Credits/CreditsLV2
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/Credits/CreditsVST
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/Fonts/DejaVuSansMono.ttf
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/Images/settings.png
@@ -277,3 +279,17 @@ set_target_properties(CamomileBinaryData PROPERTIES POSITION_INDEPENDENT_CODE ON
 
 target_link_libraries(Camomile PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client ${SFONT_LIBS})
 target_link_libraries(CamomileFx PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client ${SFONT_LIBS})
+target_link_libraries(Camomile_LV2 PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client ${SFONT_LIBS})
+
+add_executable(lv2_file_generator ${CMAKE_CURRENT_SOURCE_DIR}/LV2/main.c)
+target_link_libraries(lv2_file_generator ${CMAKE_DL_LIBS})
+
+set_target_properties(lv2_file_generator PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CAMOMILE_PLUGINS_LOCATION})
+set_target_properties(Camomile_LV2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CAMOMILE_PLUGINS_LOCATION})
+set_target_properties(Camomile_LV2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CAMOMILE_PLUGINS_LOCATION})
+foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+		  string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+			set_target_properties(lv2_file_generator PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CAMOMILE_PLUGINS_LOCATION})
+      set_target_properties(Camomile_LV2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CAMOMILE_PLUGINS_LOCATION})
+      set_target_properties(Camomile_LV2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CAMOMILE_PLUGINS_LOCATION})
+endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)

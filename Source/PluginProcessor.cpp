@@ -179,15 +179,43 @@ void CamomileAudioProcessor::releaseResources()
     m_audio_advancement = 0;
 }
 
-void CamomileAudioProcessor::sendParameters()
+void CamomileAudioProcessor::sendPlayhead()
 {
-    auto const& parameters = AudioProcessor::getParameters();
-    for(int i = 0; i < parameters.size(); ++i)
+    int const phl = CamomileEnvironment::getPlayHeadLevel();
+    if(phl > 0)
     {
-        auto const* param = static_cast<CamomileAudioParameter const*>(parameters.getUnchecked(i));
-        m_atoms_param[0] = static_cast<float>(i+1);
-        m_atoms_param[1] = param->convertFrom0to1(param->getValue());
-        sendList("param", m_atoms_param);
+        AudioPlayHead* playhead = getPlayHead();
+        AudioPlayHead::CurrentPositionInfo infos;
+        if(playhead && playhead->getCurrentPosition(infos))
+        {
+            m_atoms_playhead[0] = static_cast<float>(infos.isPlaying);
+            sendMessage("playhead", "playing", m_atoms_playhead);
+            m_atoms_playhead[0] = static_cast<float>(infos.isRecording);
+            sendMessage("playhead", "recording", m_atoms_playhead);
+            m_atoms_playhead[0] = static_cast<float>(infos.isLooping);
+            m_atoms_playhead.push_back(static_cast<float>(infos.ppqLoopStart));
+            m_atoms_playhead.push_back(static_cast<float>(infos.ppqLoopEnd));
+            sendMessage("playhead", "looping", m_atoms_playhead);
+            m_atoms_playhead.resize(1);
+            m_atoms_playhead[0] = static_cast<float>(infos.editOriginTime);
+            sendMessage("playhead", "edittime", m_atoms_playhead);
+            m_atoms_playhead[0] = static_cast<float>(infos.frameRate);
+            sendMessage("playhead", "framerate", m_atoms_playhead);
+            
+            m_atoms_playhead[0] = static_cast<float>(infos.bpm);
+            sendMessage("playhead", "bpm", m_atoms_playhead);
+            m_atoms_playhead[0] = static_cast<float>(infos.ppqPositionOfLastBarStart);
+            sendMessage("playhead", "lastbar", m_atoms_playhead);
+            m_atoms_playhead[0] = static_cast<float>(infos.timeSigNumerator);
+            m_atoms_playhead.push_back(static_cast<float>(infos.timeSigDenominator));
+            sendMessage("playhead", "timesig", m_atoms_playhead);
+            
+            m_atoms_playhead[0] = static_cast<float>(infos.ppqPosition);
+            m_atoms_playhead[1] = static_cast<float>(infos.timeInSamples);
+            m_atoms_playhead.push_back(static_cast<float>(infos.timeInSeconds));
+            sendMessage("playhead", "position", m_atoms_playhead);
+            m_atoms_playhead.resize(1);
+        }
     }
 }
 
