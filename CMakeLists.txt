@@ -156,7 +156,6 @@ source_group(ELSE FILES ${ElseSources})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/shared)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/aliases)
 
 file(GLOB_RECURSE CamomilePdSources
     ${SOURCES_DIRECTORY}/Pd/*.c
