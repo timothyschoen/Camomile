@@ -147,7 +147,7 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -G "Visual Studio 16 2019" -A x64
+      run: cmake $GITHUB_WORKSPACE -G "Visual Studio 17 2022" -A x64
 
     - name: Build
       working-directory: ${{github.workspace}}/build
@@ -187,7 +187,7 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -G "Visual Studio 16 2019" -A Win32
+      run: cmake $GITHUB_WORKSPACE -G "Visual Studio 17 2022" -A Win32
 
     - name: Build
       working-directory: ${{github.workspace}}/build
