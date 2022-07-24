@@ -46,49 +46,15 @@ At last, Camomile-ELSE don't have documented how to create plugins with it. But 
  - You need to declare else path in your pd patch with: `[declare -path else]`
  - To guarantee else objects will be loaded correctly, you need to instantiate all else object like `[else_object_name]` avoiding use other manner like `[else/else_object_name]`.
 
-
-### Compilation
-
-Download Camomile-ELSE and its dependencies using git:
+## Compilation
 
 ```
 git clone --recursive https://github.com/emviveros/Camomile-ELSE.git
-```
-
-Generate the libpd project using [CMake](https://cmake.org) and compile the libpd library and the plugins:
-
-- **Linux**  
-```
 cd Camomile-ELSE
-cd Dependencies/LibPdBuild/LinuxMakefile && cmake .. -DCMAKE_BUILD_TYPE=Release && cd ../../..
-make
+mkdir build && cd build
+cmake .. (the generator can be specified using -G"Unix Makefiles", -G"XCode" or -G"Visual Studio 16 2019" -A x64)
+cmake --build .
 ```
-Important: JUCE requires a set of pre-installed libraries: libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype6-dev alsa libasound2-dev. Before building Camomile you can run to install everything:
-```
-sudo apt-get -qq update
-sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype6-dev alsa libasound2-dev
-```
-- **Mac**
-```
-cd Camomile-ELSE
-cd Dependencies/LibPdBuild/MacOSX && cmake .. -GXcode && cd ../../..
-xcodebuild -workspace Camomile.xcworkspace -scheme Camomile-libpd -configuration Release
-```
-- **Windows**
-
-Important: libpd requires the static [pthread](https://github.com/GerHobbelt/pthread-win32.git) library for windows with multithread static runtime library (MT).
-```
-cd Camomile-ELSE
-mkdir Dependencies\LibPd\build && mkdir Dependencies\LibPd\build\msvc && cd Dependencies\LibPd\build\msvc
-cmake -G "Visual Studio 14 2015 Win64" -DPD_MULTI=ON -DPD_UTILS=OFF -DMSVC_STATIC_RUNTIME=ON -DMSVC_PTHREAD_LIB="pthread.lib" ../..
-msbuild libpd.sln /t:libpdstatic /nologo /verbosity:quiet /p:Configuration=Release /p:Platform=x64
-cd ..\..\..
-msbuild Instrument/Builds/VisualStudio2015/Camomile.sln /nologo /p:Configuration=Release /p:Platform=x64
-msbuild Effect/Builds/VisualStudio2015/Camomile.sln /nologo /p:Configuration=Release /p:Platform=x64
-msbuild LV2/Builds/VisualStudio2015/Camomile.sln /nologo /p:Configuration=Release /p:Platform=x64
-```
-For a step by step compilation process, see: https://github.com/emviveros/Camomile-ELSE/wiki/Compiling-Camomile-ELSE-in-Windows-10
-
 ### Organization
 
 - [CICM](http://cicm.mshparisnord.org)
