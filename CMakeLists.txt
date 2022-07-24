@@ -7,6 +7,85 @@ set_property(GLOBAL PROPERTY USE_FOLDERS YES)
 
 project(Camomile VERSION 1.0.8 LANGUAGES C CXX)
 
+# Switch to enable/disable sfont~, in case the build fails or you want to speed up the build
+if(ENABLE_SFONT)
+    message("-- Building fluidsynth")
+
+    set(SFONT_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/fluidsynth")
+
+    if(MSVC)
+        # Building fluidsynth on Windows is a hassle, so I've prebuilt all the static deps once, shipped in a zipfile
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar xzf ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/sfont~/win_deps.zip
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+
+        list(APPEND SFONT_LIBS
+            ${SFONT_LIB_DIR}/lib64/FLAC.lib
+            ${SFONT_LIB_DIR}/lib64/libfluidsynth.lib
+            ${SFONT_LIB_DIR}/lib64/libmp3lame-static.lib
+            ${SFONT_LIB_DIR}/lib64/libmpghip-static.lib
+            ${SFONT_LIB_DIR}/lib64/mpg123.lib
+            ${SFONT_LIB_DIR}/lib64/ogg.lib
+            ${SFONT_LIB_DIR}/lib64/opus.lib
+            ${SFONT_LIB_DIR}/lib64/sndfile.lib
+            ${SFONT_LIB_DIR}/lib64/vorbis.lib
+            ${SFONT_LIB_DIR}/lib64/vorbisenc.lib
+
+            ${SFONT_LIB_DIR}/lib/FLAC.lib
+            ${SFONT_LIB_DIR}/lib/libfluidsynth.lib
+            ${SFONT_LIB_DIR}/lib/libmp3lame-static.lib
+            ${SFONT_LIB_DIR}/lib/libmpghip-static.lib
+            ${SFONT_LIB_DIR}/lib/mpg123.lib
+            ${SFONT_LIB_DIR}/lib/ogg.lib
+            ${SFONT_LIB_DIR}/lib/opus.lib
+            ${SFONT_LIB_DIR}/lib/sndfile.lib
+            ${SFONT_LIB_DIR}/lib/vorbis.lib
+            ${SFONT_LIB_DIR}/lib/vorbisenc.lib
+        )
+    else()
+
+        # Unpack sources of dependencies
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar xzf ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/sfont~/unix_deps.zip
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+
+        # Build fluidsynth and dependencies from source, silence the makefile
+        execute_process(COMMAND make -f ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/sfont~/make-static-libs.mk config
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            OUTPUT_QUIET
+            #ERROR_QUIET
+        )
+        list(APPEND SFONT_LIBS
+            ${SFONT_LIB_DIR}/lib/libfluidsynth.a
+            ${SFONT_LIB_DIR}/lib/libsndfile.a
+            ${SFONT_LIB_DIR}/lib/libogg.a
+            ${SFONT_LIB_DIR}/lib/libopus.a
+            ${SFONT_LIB_DIR}/lib/libFLAC.a
+            ${SFONT_LIB_DIR}/lib/libvorbis.a
+            ${SFONT_LIB_DIR}/lib/libvorbisenc.a
+        )
+    endif()
+
+    # Check if build succeeded, otherwise disable sfont
+    foreach(LIB ${SFONT_LIBS})
+        if(NOT EXISTS ${LIB})
+            set(FAILED_LIBS ${FAILED_LIBS} ${LIB})
+            set(ENABLE_SFONT 0)
+        endif()
+    endforeach()
+
+    if(FAILED_LIBS)
+    message("Error building fluidsynth: Libraries not found:")
+    foreach(LIB ${FAILED_LIBS})
+        message(${LIB})
+    endforeach()
+    message("Disabling sfont object")
+    endif()
+endif()
+
+
 if("${CMAKE_SYSTEM}" MATCHES "Linux")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic")
   set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-Bsymbolic")
@@ -59,7 +138,22 @@ file(GLOB CamomileSources
     ${SOURCES_DIRECTORY}/PluginProcessor.h
     ${SOURCES_DIRECTORY}/PluginProcessorBuses.cpp
     ${SOURCES_DIRECTORY}/PluginProcessorReceive.cpp)
-source_group("Source" FILES ${CamomileSources})
+source_group("Source" FILES CamomileSources)
+
+file(GLOB_RECURSE ElseSources
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/shared/*.c
+)
+
+if(ENABLE_SFONT)
+    list(APPEND ELSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/sfont~/sfont~.c)
+    include_directories(${PROJECT_BINARY_DIR}/fluidsynth/include)
+endif()
+
+source_group(ELSE FILES ${ELSE_SOURCES})
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/shared)
 
 file(GLOB_RECURSE CamomilePdSources
     ${SOURCES_DIRECTORY}/Pd/*.c
@@ -122,13 +216,13 @@ juce_add_plugin(CamomileFx
 
 juce_generate_juce_header(Camomile)
 set_target_properties(Camomile PROPERTIES CXX_STANDARD 20)
-target_sources(Camomile PRIVATE ${CamomileSources} ${CamomilePdSources})
+target_sources(Camomile PRIVATE ${CamomileSources} ${CamomilePdSources} ${ElseSources}) 
 
 juce_generate_juce_header(CamomileFx)
 set_target_properties(CamomileFx PROPERTIES CXX_STANDARD 20)
-target_sources(CamomileFx PRIVATE ${CamomileSources} ${CamomilePdSources})
+target_sources(CamomileFx PRIVATE ${CamomileSources} ${CamomilePdSources} ${ElseSources})
 
-add_library(Camomile_LV2 SHARED ${CamomileLV2Sources})
+add_library(Camomile_LV2 SHARED ${CamomileLV2Sources} ${ElseSources})
 target_link_libraries(Camomile_LV2 PRIVATE CamomileFx)
 set_target_properties(Camomile_LV2 PROPERTIES PREFIX "")
 
@@ -146,6 +240,10 @@ set(CAMOMILE_COMPILE_DEFINITIONS
     PDINSTANCE=1 
     PDTHREADS=1
 )
+
+if(ENABLE_SFONT)
+    list(APPEND CAMOMILE_COMPILE_DEFINITIONS ENABLE_SFONT=1)
+endif()
     
 if(UNIX AND NOT APPLE)
     set(CAMOMILE_COMPILE_DEFINITIONS 
@@ -177,9 +275,9 @@ file(GLOB CamomileBinaryDataSources
 juce_add_binary_data(CamomileBinaryData SOURCES ${CamomileBinaryDataSources})
 set_target_properties(CamomileBinaryData PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(Camomile PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client)
-target_link_libraries(CamomileFx PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client)
-target_link_libraries(Camomile_LV2 PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client)
+target_link_libraries(Camomile PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client ${SFONT_LIBS})
+target_link_libraries(CamomileFx PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client ${SFONT_LIBS})
+target_link_libraries(Camomile_LV2 PRIVATE libpdstatic CamomileBinaryData juce::juce_audio_utils juce::juce_audio_plugin_client ${SFONT_LIBS})
 
 add_executable(lv2_file_generator ${CMAKE_CURRENT_SOURCE_DIR}/LV2/main.c)
 target_link_libraries(lv2_file_generator ${CMAKE_DL_LIBS})
