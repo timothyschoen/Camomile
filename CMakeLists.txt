@@ -184,7 +184,7 @@ juce_add_plugin(Camomile
     COPY_PLUGIN_AFTER_BUILD     TRUE
     PLUGIN_MANUFACTURER_CODE    PIGU
     PLUGIN_CODE                 Kpq8
-    FORMATS                     AU VST3 # AAX Unity AUv3
+    FORMATS                     AU VST3
     PRODUCT_NAME                "Camomile"
     AU_MAIN_TYPE                kAudioUnitType_MusicDevice
     VST3_CATEGORIES             Instrument
@@ -208,7 +208,7 @@ juce_add_plugin(CamomileFx
     COPY_PLUGIN_AFTER_BUILD     TRUE
     PLUGIN_MANUFACTURER_CODE    PIGU
     PLUGIN_CODE                 Kpq9
-    FORMATS                     AU VST3 # AAX Unity AUv3
+    FORMATS                     AU VST3
     PRODUCT_NAME                "CamomileFx"
     AU_MAIN_TYPE                kAudioUnitType_MusicEffect
     VST3_CATEGORIES             Fx
