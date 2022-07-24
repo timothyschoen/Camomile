@@ -7,6 +7,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS YES)
 
 project(Camomile VERSION 1.0.8 LANGUAGES C CXX)
 
+option(ENABLE_SFONT "" ON)
+
 # Switch to enable/disable sfont~, in case the build fails or you want to speed up the build
 if(ENABLE_SFONT)
     message("-- Building fluidsynth")
@@ -55,7 +57,7 @@ if(ENABLE_SFONT)
         execute_process(COMMAND make -f ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/sfont~/make-static-libs.mk config
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             OUTPUT_QUIET
-            #ERROR_QUIET
+            ERROR_QUIET
         )
         list(APPEND SFONT_LIBS
             ${SFONT_LIB_DIR}/lib/libfluidsynth.a
@@ -146,14 +148,15 @@ file(GLOB_RECURSE ElseSources
 )
 
 if(ENABLE_SFONT)
-    list(APPEND ELSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/sfont~/sfont~.c)
+    list(APPEND ElseSources ${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/sfont~/sfont~.c)
     include_directories(${PROJECT_BINARY_DIR}/fluidsynth/include)
 endif()
 
-source_group(ELSE FILES ${ELSE_SOURCES})
+source_group(ELSE FILES ${ElseSources})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/shared)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Source/Pd/ELSE/aliases)
 
 file(GLOB_RECURSE CamomilePdSources
     ${SOURCES_DIRECTORY}/Pd/*.c
