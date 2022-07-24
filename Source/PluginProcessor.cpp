@@ -179,6 +179,18 @@ void CamomileAudioProcessor::releaseResources()
     m_audio_advancement = 0;
 }
 
+void CamomileAudioProcessor::sendParameters()
+{
+    auto const& parameters = AudioProcessor::getParameters();
+    for(int i = 0; i < parameters.size(); ++i)
+    {
+        auto const* param = static_cast<CamomileAudioParameter const*>(parameters.getUnchecked(i));
+        m_atoms_param[0] = static_cast<float>(i+1);
+        m_atoms_param[1] = param->convertFrom0to1(param->getValue());
+        sendList("param", m_atoms_param);
+    }
+}
+
 void CamomileAudioProcessor::sendPlayhead()
 {
     int const phl = CamomileEnvironment::getPlayHeadLevel();
@@ -199,7 +211,7 @@ void CamomileAudioProcessor::sendPlayhead()
             m_atoms_playhead.resize(1);
             m_atoms_playhead[0] = static_cast<float>(infos.editOriginTime);
             sendMessage("playhead", "edittime", m_atoms_playhead);
-            m_atoms_playhead[0] = static_cast<float>(infos.frameRate);
+            m_atoms_playhead[0] = static_cast<float>(infos.frameRate.getEffectiveRate());
             sendMessage("playhead", "framerate", m_atoms_playhead);
             
             m_atoms_playhead[0] = static_cast<float>(infos.bpm);
@@ -216,89 +228,6 @@ void CamomileAudioProcessor::sendPlayhead()
             sendMessage("playhead", "position", m_atoms_playhead);
             m_atoms_playhead.resize(1);
         }
-    }
-}
-
-void CamomileAudioProcessor::sendPlayhead()
-{
-    AudioPlayHead* playhead = getPlayHead();
-    if(!playhead) return;
-    
-    auto infos = playhead->getPosition();
-    
-    if (infos.hasValue())
-    {
-        m_atoms_playhead[0] = static_cast<float>(infos->getIsPlaying());
-        sendMessage("playhead", "playing", m_atoms_playhead);
-        
-        m_atoms_playhead[0] = static_cast<float>(infos->getIsRecording());
-        sendMessage("playhead", "recording", m_atoms_playhead);
-
-        m_atoms_playhead[0] = static_cast<float>(infos->getIsLooping());
-        
-        auto loopPoints = infos->getLoopPoints();
-        if(loopPoints.hasValue()) {
-            m_atoms_playhead.push_back(static_cast<float>(loopPoints->ppqStart));
-            m_atoms_playhead.push_back(static_cast<float>(loopPoints->ppqEnd));
-        }
-        else {
-            m_atoms_playhead.push_back(0.0f);
-            m_atoms_playhead.push_back(0.0f);
-        }
-        sendMessage("playhead", "looping", m_atoms_playhead);
-        
-        if(infos->getEditOriginTime().hasValue()) {
-            m_atoms_playhead.resize(1);
-            m_atoms_playhead[0] = static_cast<float>(*infos->getEditOriginTime());
-            sendMessage("playhead", "edittime", m_atoms_playhead);
-        }
-
-        if(infos->getFrameRate().hasValue()) {
-            m_atoms_playhead[0] = static_cast<float>(infos->getFrameRate()->getEffectiveRate());
-            sendMessage("playhead", "framerate", m_atoms_playhead);
-        }
-
-       
-        if(infos->getBpm().hasValue()) {
-            m_atoms_playhead[0] = static_cast<float>(*infos->getBpm());
-            sendMessage("playhead", "bpm", m_atoms_playhead);
-        }
-        
-        if(infos->getPpqPositionOfLastBarStart().hasValue()) {
-            m_atoms_playhead[0] = static_cast<float>(*infos->getPpqPositionOfLastBarStart());
-            sendMessage("playhead", "lastbar", m_atoms_playhead);
-        }
-        
-        if(infos->getTimeSignature().hasValue()) {
-            m_atoms_playhead[0] = static_cast<float>(infos->getTimeSignature()->numerator);
-            m_atoms_playhead.push_back(static_cast<float>(infos->getTimeSignature()->denominator));
-            sendMessage("playhead", "timesig", m_atoms_playhead);
-        }
-
-        if(infos->getPpqPosition().hasValue()) {
-            
-            m_atoms_playhead[0] = static_cast<float>(*infos->getPpqPosition());
-        }
-        else {
-            m_atoms_playhead[0] = 0.0f;
-        }
-        
-        if(infos->getTimeInSamples().hasValue()) {
-            m_atoms_playhead[1] = static_cast<float>(*infos->getTimeInSamples());
-        }
-        else {
-            m_atoms_playhead[1] = 0.0f;
-        }
-        
-        if(infos->getTimeInSeconds().hasValue()) {
-            m_atoms_playhead.push_back(static_cast<float>(*infos->getTimeInSeconds()));
-        }
-        else {
-            m_atoms_playhead.push_back(0.0f);
-        }
-        
-        sendMessage("playhead", "position", m_atoms_playhead);
-        m_atoms_playhead.resize(1);
     }
 }
 
