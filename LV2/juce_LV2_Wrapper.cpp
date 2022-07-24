@@ -16,7 +16,7 @@
 
 #if JucePlugin_Build_LV2
 
-#define wrapperType_LV2 wrapperType_Undefined
+#define wrapperType_custom_LV2 wrapperType_Undefined
 
 /** Plugin requires processing with a fixed/constant block size */
 #ifndef JucePlugin_WantsLV2FixedBlockSize
@@ -726,7 +726,7 @@ public:
         inParameterChangedCallback = false;
         {
             const MessageManagerLock mmLock;
-            filter = std::unique_ptr<AudioProcessor>(createPluginFilterOfType (AudioProcessor::wrapperType_LV2));
+            filter = std::unique_ptr<AudioProcessor>(createPluginFilterOfType (AudioProcessor::wrapperType_custom_LV2));
         }
         jassert (filter != nullptr);
         

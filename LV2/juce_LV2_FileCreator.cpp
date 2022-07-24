@@ -8,7 +8,7 @@
 
 #if JucePlugin_Build_LV2
 
-#define wrapperType_LV2 wrapperType_Undefined
+#define wrapperType_custom_LV2 wrapperType_Undefined
 
 #include <cctype>
 #include <fstream>
@@ -541,7 +541,7 @@ public:
     static void createLv2Files(const char* basename)
     {
         const ScopedJuceInitialiser_GUI juceInitialiser;
-        std::unique_ptr<AudioProcessor> filter(createPluginFilterOfType (AudioProcessor::wrapperType_LV2));
+        std::unique_ptr<AudioProcessor> filter(createPluginFilterOfType (AudioProcessor::wrapperType_custom_LV2));
         
         int maxNumInputChannels, maxNumOutputChannels;
         findMaxTotalChannels(filter.get(), maxNumInputChannels, maxNumOutputChannels);
