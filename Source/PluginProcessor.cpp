@@ -201,10 +201,10 @@ void CamomileAudioProcessor::sendPlayhead()
     if (infos.hasValue())
     {
         m_atoms_playhead[0] = static_cast<float>(infos->getIsPlaying());
-        sendMessage("playhead", "playing", atoms_playhead);
+        sendMessage("playhead", "playing", m_atoms_playhead);
         
         m_atoms_playhead[0] = static_cast<float>(infos->getIsRecording());
-        sendMessage("playhead", "recording", atoms_playhead);
+        sendMessage("playhead", "recording", m_atoms_playhead);
 
         m_atoms_playhead[0] = static_cast<float>(infos->getIsLooping());
         
